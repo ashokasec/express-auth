@@ -1,0 +1,1 @@
+export const NODE_ENV = Bun.env.NODE_ENV
