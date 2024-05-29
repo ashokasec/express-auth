@@ -2,6 +2,9 @@
   "name": "express-auth",
   "module": "src/server.ts",
   "type": "module",
+  "scripts": {
+    "dev": "NODE_ENV=development bun --watch ./src/server.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
