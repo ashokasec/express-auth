@@ -7,13 +7,14 @@ export const sign_up = async (req: any, res: any) => {
 
     try {
         const new_user = new Credential({ name, email, password })
-        const db_result = await new_user.save()
+        await new_user.save()
         return res.status(200).json({ message: "User Registered Successfully" });
     } catch (error: any) {
-        console.error(`Controller:Error in [Registering New User] : ${error.message}`);
+        console.error(`Controller:Auth:Error in [Registering New User] : ${error.message}`);
         return res.status(500).json({ error: "Internal Server Error" });
     }
 }
+
 export const sign_in = async (req: any, res: any) => {
     const { email, password } = req.body;
 
@@ -24,7 +25,21 @@ export const sign_in = async (req: any, res: any) => {
         if (!existing_user) return res.status(403).json({ message: "Invalid Email / Password" })
         return res.status(200).json({ message: "User Signed In Successfully", user: existing_user });
     } catch (error: any) {
-        console.error(`Controller:Error in [Registering New User] : ${error.message}`);
+        console.error(`Controller:Auth:Error in [Login a User] : ${error.message}`);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+}
+
+export const forgot_password = async (req: any, res: any) => {
+    const { email, password, new_password } = req.body;
+    try {
+        const existing_user = await Credential.findOne({ email, password })
+        if (!existing_user) return res.status(403).json({ message: "Invalid Email / Password" })
+        existing_user.password = new_password
+        await existing_user.save()
+        return res.status(200).json({ message: "Password Reset Successfully" });
+    } catch (error: any) {
+        console.error(`Controller:Auth:Error in [Forgotting User Password] : ${error.message}`);
         return res.status(500).json({ error: "Internal Server Error" });
     }
 }
