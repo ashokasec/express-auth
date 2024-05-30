@@ -3,6 +3,7 @@ import { z } from "zod";
 
 // Validators Imports
 import { name_validator, email_validator, password_validator } from "@/validations/auth.valid";
+import { send_welcome_email } from "@/utilities/email.integration";
 
 
 // Validation Schema
@@ -37,6 +38,7 @@ export const sign_up = async (req: any, res: any) => {
     try {
         const new_user = new Credential({ name, email, password })
         await new_user.save()
+        await send_welcome_email(new_user.email, new_user.name)
         return res.status(200).json({ message: "User Registered Successfully" });
     } catch (error: any) {
         console.error(`Controller:Auth:Error in [Registering New User] : ${error.message}`);
