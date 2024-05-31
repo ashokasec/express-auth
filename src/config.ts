@@ -1,11 +1,11 @@
 import nodemailer from "nodemailer"
 
 export const transport = nodemailer.createTransport({
-    host: "sandbox.smtp.mailtrap.io",
-    port: 2525,
+    host: Bun.env.MAILTRAP_HOST,
+    port: Bun.env.MAILTRAP_PORT,
     auth: {
-        user: "7c9d9ace073d5b",
-        pass: "ce916a689f358a"
+        user: Bun.env.MAILTRAP_USER,
+        pass: Bun.env.MAILTRAP_PASSWORD
     }
 });
 

@@ -3,6 +3,7 @@ import express from "express";
 import bodyParser from 'body-parser';
 import helmet from "helmet";
 import hpp from "hpp"
+import compression from "compression"
 
 // Congif & Utilities Imports
 import { connect_to_db } from "@/utilities/connect.db";
@@ -19,9 +20,12 @@ const PORT = Bun.env.PORT;
 app.use(helmet())
 app.use(hpp())
 
-// Content-Type Middleware Setup
+// Optimization Middleware Setup
 app.use(express.json())
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(compression({
+  threshold: 0
+}))
 
 // Applications Routes
 app.use("/auth", AUTH_ROUTE)

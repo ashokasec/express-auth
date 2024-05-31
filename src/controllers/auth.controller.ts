@@ -4,6 +4,8 @@ import { z } from "zod";
 // Validators Imports
 import { name_validator, email_validator, password_validator } from "@/validations/auth.valid";
 import { send_welcome_email } from "@/utilities/email.integration";
+import { nanoid } from "nanoid";
+import { gen_jwt_token } from "@/utilities/gen.token";
 
 
 // Validation Schema
@@ -26,6 +28,11 @@ const forgot_password_validation = z.object({
 
 // Auth Controllers
 export const sign_up = async (req: any, res: any) => {
+    const verification_jwt_expires_in_mins = parseFloat(Bun.env.VERIFICATION_JWT_EXPIRES_IN_MINS ?? "")
+    console.log(verification_jwt_expires_in_mins)
+
+    if (req.user_exists === true) return res.status(403).json({ error: "User Already Exists" })
+
     const { name, email, password } = req.body;
 
     const validation = sign_up_validation.safeParse({ name, email, password });
@@ -37,8 +44,20 @@ export const sign_up = async (req: any, res: any) => {
 
     try {
         const new_user = new Credential({ name, email, password })
-        await new_user.save()
-        await send_welcome_email(new_user.email, new_user.name)
+        const created_new_user = await new_user.save()
+
+        const gibberish = nanoid(20)
+        const payload = { email: created_new_user.email, token: gibberish }
+
+        created_new_user.verification_token = gibberish
+        await created_new_user.save()
+
+        const token = await gen_jwt_token(payload, verification_jwt_expires_in_mins)
+        console.log("Actual JWT Token:", token)
+
+        // commenting mailing as it consuming time in testing the functionalities
+        // await send_welcome_email(new_user.email, new_user.name)
+
         return res.status(200).json({ message: "User Registered Successfully" });
     } catch (error: any) {
         console.error(`Controller:Auth:Error in [Registering New User] : ${error.message}`);
@@ -65,6 +84,8 @@ export const sign_in = async (req: any, res: any) => {
         return res.status(500).json({ error: "Internal Server Error" });
     }
 }
+
+
 
 export const forgot_password = async (req: any, res: any) => {
     const { email, password, new_password } = req.body;

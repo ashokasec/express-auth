@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { nanoid } from "nanoid";
 
 const CredentialSchema = new mongoose.Schema(
     {
@@ -22,14 +23,9 @@ const CredentialSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        // verification_token: {
-        //     type: String,
-        //     required: true,
-        // },
-        // verification_token_expiry: {
-        //     type: Date,
-        //     required: true,
-        // },
+        verification_token: {
+            type: String
+        },
         is_verified: {
             type: Boolean,
             default: false,
@@ -39,11 +35,6 @@ const CredentialSchema = new mongoose.Schema(
         timestamps: true
     }
 )
-
-CredentialSchema.methods.markAsVerified = function () {
-    this.isVerified = true;
-    return this.save();
-};
 
 export type Credential = mongoose.InferSchemaType<typeof CredentialSchema>;
 export const Credential = mongoose.model("Credential", CredentialSchema)
