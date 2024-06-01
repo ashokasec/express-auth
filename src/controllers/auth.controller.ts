@@ -29,7 +29,6 @@ const forgot_password_validation = z.object({
 // Auth Controllers
 export const sign_up = async (req: any, res: any) => {
     const verification_jwt_expires_in_mins = parseFloat(Bun.env.VERIFICATION_JWT_EXPIRES_IN_MINS ?? "")
-    console.log(verification_jwt_expires_in_mins)
 
     if (req.user_exists === true) return res.status(403).json({ error: "User Already Exists" })
 
@@ -85,7 +84,37 @@ export const sign_in = async (req: any, res: any) => {
     }
 }
 
+export const send_reset_link = async (req: any, res: any) => {
+    const verification_jwt_expires_in_mins = parseFloat(Bun.env.VERIFICATION_JWT_EXPIRES_IN_MINS ?? "")
 
+    const { email } = req.body;
+    const validation = email_validator.safeParse({ email });
+
+    if (!validation.success) {
+        const errors = validation.error.errors.map(err => err.message);
+        return res.status(400).json({ errors });
+    }
+
+    try {
+        const existing_user = await Credential.findOne({ email })
+        if (!existing_user) return res.status(403).json({ message: "Invalid Email" })
+
+        const gibberish = nanoid(20)
+        const payload = { email: existing_user.email, token: gibberish }
+
+        existing_user.verification_token = gibberish
+        await existing_user.save()
+
+        const token = await gen_jwt_token(payload, verification_jwt_expires_in_mins)
+        console.log("Actual JWT Token:", token)
+
+        await existing_user.save()
+        return res.status(200).json({ message: "Password Reset Successfully" });
+    } catch (error: any) {
+        console.error(`Controller:Auth:Error in [Forgotting User Password] : ${error.message}`);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+}
 
 export const forgot_password = async (req: any, res: any) => {
     const { email, password, new_password } = req.body;

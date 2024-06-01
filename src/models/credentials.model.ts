@@ -26,6 +26,9 @@ const CredentialSchema = new mongoose.Schema(
         verification_token: {
             type: String
         },
+        forgot_pass_token: {
+            type: String
+        },
         is_verified: {
             type: Boolean,
             default: false,
