@@ -31,24 +31,26 @@ const forgot_password_validation = z.object({
 export const sign_up = async (req: any, res: any) => {
     const verification_jwt_expires_in_mins = parseFloat(Bun.env.VERIFICATION_JWT_EXPIRES_IN_MINS ?? "")
 
+    // Check if user already exists based on a flag in the request object
     if (req.user_exists === true) return res.status(403).json({ error: "User Already Exists" })
 
     const { name, email, password } = req.body;
 
+    // Validate the Input
     const validation = sign_up_validation.safeParse({ name, email, password });
-
     if (!validation.success) {
         const errors = validation.error.errors.map(err => err.message);
         return res.status(400).json({ errors });
     }
 
     try {
+        // Create a new user document with provided details
         const new_user = new Credential({ name, email, password })
         const created_new_user = await new_user.save()
 
+        // Generate a unique verification token (gibberish), create payload for JWT token containing user email and token, and update user's verification_token field with the generated token
         const gibberish = nanoid(20)
         const payload = { email: created_new_user.email, token: gibberish }
-
         created_new_user.verification_token = gibberish
         await created_new_user.save()
 
@@ -68,15 +70,18 @@ export const sign_up = async (req: any, res: any) => {
 export const sign_in = async (req: any, res: any) => {
     const { email, password } = req.body;
 
+    // Validate the Input
     const validation = sign_in_validation.safeParse({ email, password });
-
     if (!validation.success) {
         const errors = validation.error.errors.map(err => err.message);
         return res.status(400).json({ errors });
     }
 
     try {
+        // Check if the user with the provided email exists
         const existing_user = await Credential.findOne({ email, password })
+
+        // If user does not exist, return error response
         if (!existing_user) return res.status(403).json({ message: "Invalid Email / Password" })
         return res.status(200).json({ message: "User Signed In Successfully", user: existing_user });
     } catch (error: any) {
@@ -89,27 +94,35 @@ export const send_password_reset_link = async (req: any, res: any) => {
     const password_verification_jwt_token_expires_in_mins = parseFloat(Bun.env.PASSWORD_VERIFICATION_JWT_TOKEN_EXPIRES_IN_MINS ?? "")
 
     const { email } = req.body;
-    const validation = email_validator.safeParse(email);
 
+    // Validate the input
+    const validation = email_validator.safeParse(email);
     if (!validation.success) {
         const errors = validation.error.errors.map(err => err.message);
         return res.status(400).json({ errors });
     }
 
     try {
-        const existing_user = await Credential.findOne({ email })
-        if (!existing_user) return res.status(403).json({ message: "Invalid Email" })
+        // Check if the user with the provided email exists
+        const existing_user = await Credential.findOne({ email });
 
-        const gibberish = nanoid(20)
-        const payload = { email: existing_user.email, token: gibberish }
+        // If user does not exist, return error response
+        if (!existing_user) {
+            return res.status(403).json({ message: "Invalid Email" });
+        }
 
-        existing_user.forgot_pass_token = gibberish
-        await existing_user.save()
+        // Generate a unique token for password reset, create payload for JWT token containing user email and token, and update user's forgot_pass_token field with the generated token
+        const gibberish = nanoid(20);
+        const payload = { email: existing_user.email, token: gibberish };
+        existing_user.forgot_pass_token = gibberish;
+        await existing_user.save();
 
-        const token = await gen_jwt_token(payload, password_verification_jwt_token_expires_in_mins)
-        console.log("Actual JWT Token:", token)
 
-        await existing_user.save()
+        // Generate JWT token with the payload for password reset
+        const token = await gen_jwt_token(payload, password_verification_jwt_token_expires_in_mins);
+        console.log("Actual JWT Token:", token);
+
+        // Return success response with password reset token
         return res.status(200).json({ message: "Password Reset Successfully", reset_link: token });
     } catch (error: any) {
         console.error(`Controller:Auth:Error in [Forgotting User Password] : ${error.message}`);
@@ -120,23 +133,28 @@ export const send_password_reset_link = async (req: any, res: any) => {
 export const validate_reset_token = async (req: any, res: any) => {
     const { token } = req.query;
 
+    // Validate the input
     const reset_token_validation = token_validator;
-
     const validation = reset_token_validation.safeParse(token);
-
     if (!validation.success) {
         return res.status(400).json({ error: "Invalid Token" });
     }
 
     try {
+        // Verify the reset token
         const reset_token = await verifyToken(token)
 
+        // Find the existing user with the provided email from reset token
         let existing_email = await Credential.findOne({ email: reset_token.email })
         if (!existing_email) return res.status(403).json({ error: "Invalid User Request" })
+
+        // If the token matches the forgot_pass_token, mark user as verified
         if (existing_email.forgot_pass_token === reset_token.token) {
             await Credential.updateOne({ email: existing_email.email }, { $set: { is_verified: true } });
             return res.status(200).json({ success: "Reset Password Token is Valid" })
         }
+
+        // Otherwise, return invalid token error
         return res.status(403).json({ error: "Invalid Token" })
     } catch (error: any) {
         console.error(`Controller:Verfication:Error in [Validating Verification Token] : ${error.message}`);
