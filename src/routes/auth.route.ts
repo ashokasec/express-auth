@@ -1,4 +1,10 @@
-import { forgot_password, sign_in, sign_up } from "@/controllers/auth.controller"
+import {
+    forgot_password,
+    send_password_reset_link,
+    sign_in,
+    sign_up,
+    validate_reset_token
+} from "@/controllers/auth.controller"
 import { validate_verification_token } from "@/controllers/verification.controller"
 import { if_user_exists } from "@/middlewares/if_user_exists"
 import express from "express"
@@ -12,7 +18,8 @@ route.post("/signin", sign_in)
 
 // 3. Reseting Password
 route.patch("/forgot-password", forgot_password)
-route.post("/signin", sign_in)
+route.post("/send-reset-link", send_password_reset_link)
+route.get("/validate-token", validate_reset_token)
 
 // 4. Verifying User
 route.post("/verify", validate_verification_token)
