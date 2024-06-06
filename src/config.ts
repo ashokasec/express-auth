@@ -18,6 +18,14 @@ export const jwt_secrets = {
         secret: Bun.env.FORGOT_PASSWORD_JWT_SECRET || "",
         expiry: Number(Bun.env.FORGOT_PASSWORD_JWT_EXPIRES_IN_MINS || "")
     },
+    refresh_token: {
+        secret: Bun.env.AUTH_REFRESH_JWT_SECRET || "",
+        expiry: Number(Bun.env.AUTH_REFRESH_JWT_EXPIRES_IN_MINS || "")
+    },
+    access_token: {
+        secret: Bun.env.AUTH_REFRESH_JWT_SECRET || "",
+        expiry: Number(Bun.env.AUTH_REFRESH_JWT_EXPIRES_IN_MINS || "")
+    },
 
 }
 export const NODE_ENV = Bun.env.NODE_ENV
