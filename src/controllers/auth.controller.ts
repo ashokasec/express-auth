@@ -6,7 +6,7 @@ import { name_validator, email_validator, password_validator, token_validator } 
 import { send_welcome_email } from "@/utilities/email.integration";
 import { nanoid } from "nanoid";
 import { gen_jwt_token, verifyToken } from "@/utilities/gen.token";
-
+import { jwt_secrets } from "@/config";
 
 // Validation Schema
 const sign_up_validation = z.object({
@@ -29,7 +29,6 @@ const forgot_password_validation = z.object({
 
 // Auth Controllers
 export const sign_up = async (req: any, res: any) => {
-    const verification_jwt_expires_in_mins = parseFloat(Bun.env.VERIFICATION_JWT_EXPIRES_IN_MINS ?? "")
 
     // Check if user already exists based on a flag in the request object
     if (req.user_exists === true) return res.status(403).json({ error: "User Already Exists" })
@@ -54,7 +53,7 @@ export const sign_up = async (req: any, res: any) => {
         created_new_user.verification_token = gibberish
         await created_new_user.save()
 
-        const token = await gen_jwt_token(payload, verification_jwt_expires_in_mins)
+        const token = await gen_jwt_token(payload, jwt_secrets.email_verification.secret, jwt_secrets.email_verification.expiry)
         console.log("Actual JWT Token:", token)
 
         // commenting mailing as it consuming time in testing the functionalities
@@ -119,7 +118,7 @@ export const send_password_reset_link = async (req: any, res: any) => {
 
 
         // Generate JWT token with the payload for password reset
-        const token = await gen_jwt_token(payload, password_verification_jwt_token_expires_in_mins);
+        const token = await gen_jwt_token(payload, jwt_secrets.forgot_pass.secret, jwt_secrets.forgot_pass.expiry);
         console.log("Actual JWT Token:", token);
 
         // Return success response with password reset token
@@ -142,7 +141,7 @@ export const validate_reset_token = async (req: any, res: any) => {
 
     try {
         // Verify the reset token
-        const reset_token = await verifyToken(token)
+        const reset_token = await verifyToken(token, jwt_secrets.forgot_pass.secret)
 
         // Find the existing user with the provided email from reset token
         let existing_email = await Credential.findOne({ email: reset_token.email })
@@ -175,7 +174,7 @@ export const forgot_password = async (req: any, res: any) => {
 
     try {
         // Verify the reset token
-        const reset_token = await verifyToken(token as string)
+        const reset_token = await verifyToken(token, jwt_secrets.forgot_pass.secret)
 
         // Check if the email from the request body matches the email from the reset token
         if (email !== reset_token.email) {
