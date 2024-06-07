@@ -1,5 +1,9 @@
 import nodemailer from "nodemailer"
 
+export const project = {
+    name: "Express-Auth"
+} 
+
 export const transport = nodemailer.createTransport({
     host: Bun.env.MAILTRAP_HOST,
     port: Bun.env.MAILTRAP_PORT,
@@ -11,7 +15,12 @@ export const transport = nodemailer.createTransport({
 
 export const cookie = {
     ACCESS_TOKEN: "access_token",
-    REFRESH_TOKEN: "refresh_token"
+    REFRESH_TOKEN: "refresh_token",
+    OPTIONS: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Set secure flag in production
+        sameSite: 'strict',
+    }
 }
 
 export const jwt_secrets = {
