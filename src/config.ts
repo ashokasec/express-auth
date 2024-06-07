@@ -9,6 +9,11 @@ export const transport = nodemailer.createTransport({
     }
 });
 
+export const cookie = {
+    ACCESS_TOKEN: "access_token",
+    REFRESH_TOKEN: "refresh_token"
+}
+
 export const jwt_secrets = {
     email_verification: {
         secret: Bun.env.VERIFICATION_JWT_SECRET || "",
