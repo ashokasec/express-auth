@@ -19,13 +19,7 @@ export const verify_request = async (req: any, res: any, next: any) => {
                     const user_info = await verify_jwt_token(refresh_token, jwt_secrets.refresh_token.secret);
                     const payload = { email: user_info.email };
                     const new_access_token = await gen_jwt_token(payload, jwt_secrets.access_token.secret, jwt_secrets.access_token.expiry);
-
-                    res.cookie(cookie.ACCESS_TOKEN, new_access_token, {
-                        httpOnly: true,
-                        secure: process.env.NODE_ENV === 'production', // Set secure flag in production
-                        sameSite: 'strict',
-                    });
-
+                    res.cookie(cookie.ACCESS_TOKEN, new_access_token, cookie.OPTIONS);
                     req.user = user_info.email;
                     next();
                 } catch (refreshError: any) {

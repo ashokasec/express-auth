@@ -3,10 +3,10 @@ import { z } from "zod";
 
 // Validators Imports
 import { name_validator, email_validator, password_validator, token_validator } from "@/validations/auth.valid";
-import { send_welcome_email } from "@/utilities/email.integration";
+import { send_welcome_email } from "@/utilities/email/email.integration";
 import { nanoid } from "nanoid";
 import { gen_jwt_token, verify_jwt_token } from "@/utilities/jwt.handler";
-import { jwt_secrets } from "@/config"; 
+import { jwt_secrets } from "@/config";
 
 // Validation Schema
 const sign_up_validation = z.object({
@@ -54,10 +54,9 @@ export const sign_up = async (req: any, res: any) => {
         await created_new_user.save()
 
         const token = await gen_jwt_token(payload, jwt_secrets.email_verification.secret, jwt_secrets.email_verification.expiry)
-        console.log("Actual JWT Token:", token)
 
         // commenting mailing as it consuming time in testing the functionalities
-        // await send_welcome_email(new_user.email, new_user.name)
+        await send_welcome_email(new_user.email, new_user.name, token)
 
         return res.status(200).json({ message: "User Registered Successfully" });
     } catch (error: any) {
