@@ -5,8 +5,8 @@ import { z } from "zod";
 import { name_validator, email_validator, password_validator, token_validator } from "@/validations/auth.valid";
 import { send_welcome_email } from "@/utilities/email.integration";
 import { nanoid } from "nanoid";
-import { gen_jwt_token, verifyToken } from "@/utilities/gen.token";
-import { jwt_secrets } from "@/config";
+import { gen_jwt_token, verify_jwt_token } from "@/utilities/jwt.handler";
+import { jwt_secrets } from "@/config"; 
 
 // Validation Schema
 const sign_up_validation = z.object({
@@ -141,7 +141,7 @@ export const validate_reset_token = async (req: any, res: any) => {
 
     try {
         // Verify the reset token
-        const reset_token = await verifyToken(token, jwt_secrets.forgot_pass.secret)
+        const reset_token = await verify_jwt_token(token, jwt_secrets.forgot_pass.secret)
 
         // Find the existing user with the provided email from reset token
         let existing_email = await Credential.findOne({ email: reset_token.email })
@@ -174,7 +174,7 @@ export const forgot_password = async (req: any, res: any) => {
 
     try {
         // Verify the reset token
-        const reset_token = await verifyToken(token, jwt_secrets.forgot_pass.secret)
+        const reset_token = await verify_jwt_token(token, jwt_secrets.forgot_pass.secret)
 
         // Check if the email from the request body matches the email from the reset token
         if (email !== reset_token.email) {

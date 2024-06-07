@@ -17,7 +17,7 @@ export const gen_jwt_token = async (payload: any, secret_key: string, expires_in
     return jwt;
 }
 
-export const verifyToken = async (token: string, secret_key: string): Promise<any> => {
+export const verify_jwt_token = async (token: string, secret_key: string): Promise<any> => {
     const encoded_secret_key = mutate_secret_key(secret_key)
     try {
         const { payload } = await jwtVerify(token, encoded_secret_key);

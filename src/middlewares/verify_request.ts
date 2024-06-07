@@ -1,5 +1,5 @@
 import { cookie, jwt_secrets } from "@/config";
-import { gen_jwt_token, verifyToken } from "@/utilities/gen.token";
+import { gen_jwt_token, verify_jwt_token } from "@/utilities/jwt.handler";
 
 export const verify_request = async (req: any, res: any, next: any) => {
     try {
@@ -10,13 +10,13 @@ export const verify_request = async (req: any, res: any, next: any) => {
         }
 
         try {
-            const token = await verifyToken(access_token, jwt_secrets.access_token.secret);
+            const token = await verify_jwt_token(access_token, jwt_secrets.access_token.secret);
             req.user = token.email;
             next();
         } catch (error: any) {
             if (error.name === 'TokenExpiredError') {
                 try {
-                    const user_info = await verifyToken(refresh_token, jwt_secrets.refresh_token.secret);
+                    const user_info = await verify_jwt_token(refresh_token, jwt_secrets.refresh_token.secret);
                     const payload = { email: user_info.email };
                     const new_access_token = await gen_jwt_token(payload, jwt_secrets.access_token.secret, jwt_secrets.access_token.expiry);
 

@@ -1,7 +1,8 @@
 // Validation Schema
 
+import { jwt_secrets } from "@/config";
 import { Credential } from "@/models/credentials.model";
-import { verifyToken } from "@/utilities/gen.token";
+import { verify_jwt_token } from "@/utilities/jwt.handler";
 import { z } from "zod";
 
 
@@ -18,7 +19,7 @@ export const validate_verification_token = async (req: any, res: any) => {
     }
 
     try {
-        const verify_token = await verifyToken(token)
+        const verify_token = await verify_jwt_token(token, jwt_secrets.access_token.secret)
         console.log(verify_token)
 
         let existing_email = await Credential.findOne({ email: verify_token.email })
