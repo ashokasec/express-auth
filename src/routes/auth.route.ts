@@ -22,6 +22,6 @@ route.post("/send-reset-link", send_password_reset_link)
 route.get("/validate-token", validate_reset_token)
 
 // 4. Verifying User
-route.post("/verify", validate_verification_token)
+route.get("/verify", validate_verification_token)
 
 export default route

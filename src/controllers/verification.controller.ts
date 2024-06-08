@@ -19,7 +19,7 @@ export const validate_verification_token = async (req: any, res: any) => {
     }
 
     try {
-        const verify_token = await verify_jwt_token(token, jwt_secrets.access_token.secret)
+        const verify_token = await verify_jwt_token(token, jwt_secrets.email_verification.secret)
         console.log(verify_token)
 
         let existing_email = await Credential.findOne({ email: verify_token.email })

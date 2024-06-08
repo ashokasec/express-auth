@@ -6,7 +6,7 @@ import { name_validator, email_validator, password_validator, token_validator } 
 import { send_welcome_email } from "@/utilities/email/email.integration";
 import { nanoid } from "nanoid";
 import { gen_jwt_token, verify_jwt_token } from "@/utilities/jwt.handler";
-import { jwt_secrets } from "@/config";
+import { cookie, jwt_secrets } from "@/config";
 
 // Validation Schema
 const sign_up_validation = z.object({
@@ -54,11 +54,18 @@ export const sign_up = async (req: any, res: any) => {
         await created_new_user.save()
 
         const token = await gen_jwt_token(payload, jwt_secrets.email_verification.secret, jwt_secrets.email_verification.expiry)
-
+        
+        
         // commenting mailing as it consuming time in testing the functionalities
         await send_welcome_email(new_user.email, new_user.name, token)
 
-        return res.status(200).json({ message: "User Registered Successfully" });
+        const access_token = await gen_jwt_token(payload, jwt_secrets.access_token.secret, jwt_secrets.access_token.expiry)
+        const refresh_token = await gen_jwt_token(payload, jwt_secrets.refresh_token.secret, jwt_secrets.refresh_token.expiry)
+
+        return res.status(200)
+            .cookie(cookie.ACCESS_TOKEN, access_token, cookie.OPTIONS)
+            .cookie(cookie.REFRESH_TOKEN, refresh_token, cookie.OPTIONS)
+            .json({ message: "User Registered Successfully" });
     } catch (error: any) {
         console.error(`Controller:Auth:Error in [Registering New User] : ${error.message}`);
         return res.status(500).json({ error: "Internal Server Error" });
@@ -77,11 +84,20 @@ export const sign_in = async (req: any, res: any) => {
 
     try {
         // Check if the user with the provided email exists
-        const existing_user = await Credential.findOne({ email, password })
+        const existing_user = await Credential.findOne({ email, password }).select("-_id name email is_verified")
 
         // If user does not exist, return error response
         if (!existing_user) return res.status(403).json({ message: "Invalid Email / Password" })
-        return res.status(200).json({ message: "User Signed In Successfully", user: existing_user });
+
+
+        const payload = { email: existing_user?.email }
+        const access_token = await gen_jwt_token(payload, jwt_secrets.access_token.secret, jwt_secrets.access_token.expiry)
+        const refresh_token = await gen_jwt_token(payload, jwt_secrets.refresh_token.secret, jwt_secrets.refresh_token.expiry)
+
+        return res.status(200)
+            .cookie(cookie.ACCESS_TOKEN, access_token, cookie.OPTIONS)
+            .cookie(cookie.REFRESH_TOKEN, refresh_token, cookie.OPTIONS)
+            .json({ message: "User Signed In Successfully", user: existing_user });
     } catch (error: any) {
         console.error(`Controller:Auth:Error in [Login a User] : ${error.message}`);
         return res.status(500).json({ error: "Internal Server Error" });
@@ -89,7 +105,6 @@ export const sign_in = async (req: any, res: any) => {
 }
 
 export const send_password_reset_link = async (req: any, res: any) => {
-    const password_verification_jwt_token_expires_in_mins = parseFloat(Bun.env.PASSWORD_VERIFICATION_JWT_TOKEN_EXPIRES_IN_MINS ?? "")
 
     const { email } = req.body;
 
@@ -118,7 +133,6 @@ export const send_password_reset_link = async (req: any, res: any) => {
 
         // Generate JWT token with the payload for password reset
         const token = await gen_jwt_token(payload, jwt_secrets.forgot_pass.secret, jwt_secrets.forgot_pass.expiry);
-        console.log("Actual JWT Token:", token);
 
         // Return success response with password reset token
         return res.status(200).json({ message: "Password Reset Successfully", reset_link: token });
