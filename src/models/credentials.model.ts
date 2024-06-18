@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { nanoid } from "nanoid";
 
 const CredentialSchema = new mongoose.Schema(
     {
